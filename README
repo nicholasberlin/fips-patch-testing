@@ -1,0 +1,18 @@
+# create a new docker container
+docker build -t fips-patch:1 docker/
+
+# build https.go (it will automatically run the Makefile)
+sudo docker run --rm -v$(pwd):$(pwd) -w $(pwd) fips-patch:1 --platforms linux/amd64
+
+# generate certs for https endpoint
+openssl req -x509 -nodes -days 365 -newkey rsa:2048   -keyout key.pem -out cert.pem   -config cert.conf
+
+# start https endpoint
+python3 ./simple-https-server.py &
+
+# run https
+./https
+
+# if you rebuild https with the base docker, it will fail https will fail
+sudo docker run --rm -v$(pwd):$(pwd) -w $(pwd) docker.elastic.co/beats-dev/golang-crossbuild:1.24.2-main-debian11-fips --platforms linux/amd64
+
